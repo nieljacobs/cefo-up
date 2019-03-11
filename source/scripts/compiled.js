@@ -47,16 +47,23 @@ function () {
         },
         "Scaling-Factor": window.devicePixelRatio || "",
         "Color-Depth": window.screen.colorDepth || "",
-        "Plugins": this.getPluginNames() || []
+        "Plugins": this.getPluginNames().toString() || []
       };
       this.getPublicIP().then(function (obj) {
         tmpObj["Public-IP"] = obj['ip'];
         asyncTasksCompleted++;
       });
-      this.getLocalIP().then(function (ip) {
-        tmpObj["Local-IP"] = ip;
+
+      try {
+        this.getLocalIP().then(function (ip) {
+          tmpObj["Local-IP"] = ip;
+          asyncTasksCompleted++;
+        });
+      } catch (error) {
         asyncTasksCompleted++;
-      });
+        tmpObj["Local-IP"] = "";
+      }
+
       return new Promise(function (resolve, reject) {
         var intervalRef = setInterval(function () {
           if (asyncTasksCompleted >= 2) {
@@ -92,8 +99,6 @@ function () {
   }, {
     key: "getLocalIP",
     value: function getLocalIP() {
-      var _this2 = this;
-
       document.body.insertAdjacentHTML("beforeend", "<iframe id=\"dummy-frame\" sandbox=\"allow-same-origin\" style=\"display: none\"></iframe>");
 
       var emptyFunction = function emptyFunction() {},
@@ -103,8 +108,7 @@ function () {
 
       if (!RTCPeerConnection) {
         var crrWin = iframe.currentWindow;
-
-        var _RTCPeerConnection = crrWin.RTCPeerConnection || crrWin.mozRTCPeerConnection || crrWin.webkitRTCPeerConnection;
+        RTCPeerConnection = crrWin.RTCPeerConnection || crrWin.mozRTCPeerConnection || crrWin.webkitRTCPeerConnection;
       } // let servers = { iceServers: [{urls: "stun:stun.services.mozilla.com", sdpSemantics:'plan-b'}] }
 
 
@@ -117,27 +121,25 @@ function () {
         }]
       };
       var conn = new RTCPeerConnection(servers, mediaConstraints);
+      conn.createOffer(conn.setLocalDescription.bind(conn), emptyFunction, {
+        mandatory: {
+          OfferToReceiveAudio: true // don't mind it
 
-      conn.onicecandidate = function (ice) {
-        if (ice || ice.candidate || ice.candidate.candidate) {
-          var ip_regex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/;
-          IP = ip_regex.exec(ice.candidate.candidate)[1];
-          _this2.asyncCount++; // checking this oparation has been completed
-
-          conn.close();
-          conn.onicecandidate = emptyFunction;
         }
-      };
-
-      conn.createOffer(conn.setLocalDescription.bind(conn), emptyFunction);
+      });
       conn.createDataChannel("");
       return new Promise(function (resolve, reject) {
-        var intervalRef = setInterval(function () {
-          if (IP && IP.length > 10) {
-            clearInterval(intervalRef);
-            resolve(IP);
+        conn.onicecandidate = function (ice) {
+          if (ice || ice.candidate || ice.candidate.candidate) {
+            var ip_regex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/;
+            IP = ip_regex.exec(ice.candidate.candidate)[1]; // this.asyncCount++ // checking this oparation has been completed
+
+            conn.close();
+            resolve(IP); // console.log('as')
+
+            conn.onicecandidate = emptyFunction;
           }
-        }, 75);
+        };
       });
     }
   }, {

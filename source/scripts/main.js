@@ -29,7 +29,7 @@ class DeviceInfo {
             },
             "Scaling-Factor": window.devicePixelRatio || "",
             "Color-Depth": window.screen.colorDepth || "",
-            "Plugins": this.getPluginNames() || []
+            "Plugins": this.getPluginNames().toString() || []
         }
         this.getPublicIP().then(obj => {
             tmpObj["Public-IP"] = obj['ip']
