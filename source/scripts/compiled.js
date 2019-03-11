@@ -15,72 +15,84 @@ function () {
     _classCallCheck(this, DeviceInfo);
 
     // target: max number of async functions. 2
-    this.asyncCount = 0;
-    this.dataObject = {
-      "Public-IP": this.getPublicIP(),
-      "Local-IP": this.getLocalIP(),
-      "Timezone": this.getTomeZone(),
-      "JS-User-Agent": this.getUserAgentInfo['user_agent'],
-      "Do-Not-Track": this.checkDoNotTrack(),
-      "OS-Info": {
-        "os": this.getOS(),
-        "version": this.getOSVersion()
-      },
-      "Device-Info": {
-        "brand": this.getDevideMenufacturer(),
-        "model": ""
-      },
-      "Screen": {
-        "width": window.screen.width || "",
-        "height": window.screen.height || ""
-      },
-      "Window": {
-        "width": window.outerWidth || "",
-        "height": window.outerHeight || ""
-      },
-      "Scaling-Factor": window.devicePixelRatio || "",
-      "Color-Depth": window.screen.colorDepth || "",
-      "Plugins": this.getPluginNames() || []
-    };
+    // this.asyncCount = 0
+    this.dataObject = {};
   }
 
   _createClass(DeviceInfo, [{
-    key: "getDataObject",
-    value: function getDataObject() {
+    key: "buildDataObject",
+    value: function buildDataObject() {
       var _this = this;
 
-      setTimeout(function () {
-        return _this.dataObject;
-      }, 1000);
+      var asyncTasksCompleted = 0;
+      var tmpObj = {
+        "Timezone": this.getTomeZone(),
+        "JS-User-Agent": this.getUserAgentInfo()['user_agent'],
+        "Do-Not-Track": this.checkDoNotTrack(),
+        "OS-Info": {
+          "os": this.getOS(),
+          "version": this.getOSVersion()
+        },
+        "Device-Info": {
+          "brand": this.getDeviceMenufacturer(),
+          "model": ""
+        },
+        "Screen": {
+          "width": window.screen.width || "",
+          "height": window.screen.height || ""
+        },
+        "Window": {
+          "width": window.outerWidth || "",
+          "height": window.outerHeight || ""
+        },
+        "Scaling-Factor": window.devicePixelRatio || "",
+        "Color-Depth": window.screen.colorDepth || "",
+        "Plugins": this.getPluginNames() || []
+      };
+      this.getPublicIP().then(function (obj) {
+        tmpObj["Public-IP"] = obj['ip'];
+        asyncTasksCompleted++;
+      });
+      this.getLocalIP().then(function (ip) {
+        tmpObj["Local-IP"] = ip;
+        asyncTasksCompleted++;
+      });
+      return new Promise(function (resolve, reject) {
+        var intervalRef = setInterval(function () {
+          if (asyncTasksCompleted >= 2) {
+            _this.dataObject = tmpObj;
+            clearInterval(intervalRef);
+            resolve(tmpObj);
+          }
+        }, 70);
+      });
     }
   }, {
     key: "getPublicIP",
     value: function getPublicIP() {
-      var _this2 = this;
-
       var xhr = new XMLHttpRequest();
       var obj = {};
       xhr.open("GET", "https://reallyfreegeoip.org/json/");
-
-      xhr.onload = function () {
-        if (xhr.getResponseHeader("Content-type") == "application/json" && xhr.status == 200) {
-          var response = JSON.parse(xhr.responseText);
-          obj['ip'] = response['ip'];
-          obj['lat'] = response['latitude'];
-          obj['long'] = response['longitude'];
-          obj['country_code'] = response['country_code'];
-          obj['time_zone'] = response['time_zone'];
-          _this2.ipInfo = obj;
-          _this2.asyncCount++; // checking this oparation has been completed
-        }
-      };
-
       xhr.send();
+      return new Promise(function (resolve, reject) {
+        // let intervalRef = setInterval(() => {
+        xhr.onload = function () {
+          if (xhr.getResponseHeader("Content-type") == "application/json" && xhr.status == 200) {
+            var response = JSON.parse(xhr.responseText);
+            obj['ip'] = response['ip'];
+            obj['lat'] = response['latitude'];
+            obj['long'] = response['longitude'];
+            obj['country_code'] = response['country_code'];
+            obj['time_zone'] = response['time_zone'];
+            resolve(obj); // this.asyncCount++ // checking this oparation has been completed
+          }
+        };
+      });
     }
   }, {
     key: "getLocalIP",
     value: function getLocalIP() {
-      var _this3 = this;
+      var _this2 = this;
 
       document.body.insertAdjacentHTML("beforeend", "<iframe id=\"dummy-frame\" sandbox=\"allow-same-origin\" style=\"display: none\"></iframe>");
 
@@ -109,9 +121,8 @@ function () {
       conn.onicecandidate = function (ice) {
         if (ice || ice.candidate || ice.candidate.candidate) {
           var ip_regex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/;
-          var _IP = ip_regex.exec(ice.candidate.candidate)[1];
-          _this3.localIP = _IP || "";
-          _this3.asyncCount++; // checking this oparation has been completed
+          IP = ip_regex.exec(ice.candidate.candidate)[1];
+          _this2.asyncCount++; // checking this oparation has been completed
 
           conn.close();
           conn.onicecandidate = emptyFunction;
@@ -120,6 +131,14 @@ function () {
 
       conn.createOffer(conn.setLocalDescription.bind(conn), emptyFunction);
       conn.createDataChannel("");
+      return new Promise(function (resolve, reject) {
+        var intervalRef = setInterval(function () {
+          if (IP && IP.length > 10) {
+            clearInterval(intervalRef);
+            resolve(IP);
+          }
+        }, 75);
+      });
     }
   }, {
     key: "checkDoNotTrack",
@@ -204,8 +223,8 @@ function () {
       return plugins;
     }
   }, {
-    key: "getDevideMenufacturer",
-    value: function getDevideMenufacturer() {
+    key: "getDeviceMenufacturer",
+    value: function getDeviceMenufacturer() {
       var os = this.getOS();
       if (os == ("IOS" || "Macintosh")) return "Apple";
       return "";
@@ -215,9 +234,9 @@ function () {
     value: function getUserAgentInfo() {
       return {
         "user_agent": navigator.userAgent || "",
-        "os": getOS(),
-        "os_version": getOSVersion(),
-        "device_brand": getDevideMenufacturer(),
+        "os": this.getOS(),
+        "os_version": this.getOSVersion(),
+        "device_brand": this.getDeviceMenufacturer(),
         "device_model": ""
       };
     }
@@ -225,3 +244,12 @@ function () {
 
   return DeviceInfo;
 }();
+
+var info = new DeviceInfo();
+info.buildDataObject().then(function (obj) {
+  for (var o in obj) {
+    if (o == "Device-Info") continue;
+    document.querySelector('.keys').insertAdjacentHTML('beforeend', "<li> ".concat(o, " </li>"));
+    document.querySelector('.values').insertAdjacentHTML('beforeend', "<li> ".concat(o == "Screen" || o == "Window" ? obj[o]['width'] + " : " + obj[o]['height'] : o == "OS-Info" ? obj[o]['os'] & obj[o]['version'] : obj[o].toString(), " </li>"));
+  }
+});
