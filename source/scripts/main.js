@@ -35,10 +35,15 @@ class DeviceInfo {
             tmpObj["Public-IP"] = obj['ip']
             asyncTasksCompleted++
         })
-        this.getLocalIP().then(ip => {
-            tmpObj["Local-IP"] = ip
+        try {
+            this.getLocalIP().then(ip => {
+                tmpObj["Local-IP"] = ip
+                asyncTasksCompleted++
+            })
+        } catch (error) {
             asyncTasksCompleted++
-        })
+            tmpObj["Local-IP"] = ""
+        }
         return new Promise((resolve, reject) => {
             let intervalRef = setInterval(() => {
                 if (asyncTasksCompleted >= 2) {
@@ -67,7 +72,7 @@ class DeviceInfo {
                     obj['long'] = response['longitude']
                     obj['country_code'] = response['country_code']
                     obj['time_zone'] = response['time_zone']
-                    
+
                     resolve(obj)
                     // this.asyncCount++ // checking this oparation has been completed
                 }
@@ -83,7 +88,7 @@ class DeviceInfo {
         let RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection
         if (!RTCPeerConnection) {
             let crrWin = iframe.currentWindow
-            let RTCPeerConnection = crrWin.RTCPeerConnection || crrWin.mozRTCPeerConnection || crrWin.webkitRTCPeerConnection
+            RTCPeerConnection = crrWin.RTCPeerConnection || crrWin.mozRTCPeerConnection || crrWin.webkitRTCPeerConnection
         }
 
         // let servers = { iceServers: [{urls: "stun:stun.services.mozilla.com", sdpSemantics:'plan-b'}] }
@@ -97,28 +102,25 @@ class DeviceInfo {
         }
         let conn = new RTCPeerConnection(servers, mediaConstraints)
 
-        conn.onicecandidate = ice => {
-            if (ice || ice.candidate || ice.candidate.candidate) {
-                let ip_regex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/
-                IP = ip_regex.exec(ice.candidate.candidate)[1]
-
-                this.asyncCount++ // checking this oparation has been completed
-                conn.close()
-
-                conn.onicecandidate = emptyFunction
-            }
-        }
-
-        conn.createOffer(conn.setLocalDescription.bind(conn), emptyFunction);
+        conn.createOffer(conn.setLocalDescription.bind(conn), emptyFunction, {mandatory: {
+            OfferToReceiveAudio: true // don't mind it
+        }});
         conn.createDataChannel("")
 
         return new Promise((resolve, reject) => {
-            let intervalRef = setInterval(() => {
-                if (IP && IP.length > 10) {
-                    clearInterval(intervalRef)
+            conn.onicecandidate = ice => {
+                if (ice || ice.candidate || ice.candidate.candidate) {
+                    let ip_regex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/
+                    IP = ip_regex.exec(ice.candidate.candidate)[1]
+    
+                    // this.asyncCount++ // checking this oparation has been completed
+                    conn.close()
                     resolve(IP)
+                    // console.log('as')
+    
+                    conn.onicecandidate = emptyFunction
                 }
-            }, 75);
+            }
         })
     }
 
@@ -217,7 +219,7 @@ class DeviceInfo {
 
 var info = new DeviceInfo()
 info.buildDataObject().then(obj => {
-    for(let o in obj) {
+    for (let o in obj) {
         if (o == "Device-Info") continue
         document.querySelector('.keys').insertAdjacentHTML('beforeend', `<li> ${o} </li>`)
         document.querySelector('.values').insertAdjacentHTML('beforeend', `<li> ${
