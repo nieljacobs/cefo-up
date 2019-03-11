@@ -132,7 +132,7 @@ class DeviceInfo {
     getTomeZone() {
         let offset = (new Date()).getTimezoneOffset()
         let hour = -Math.round(offset / 60)
-        let min = Math.abs((offset % 60) * 60)
+        let min = Math.abs(offset % 60)
         return `${hour > 0 ? "+" : "-"}${hour < 10 ? '0'+Math.abs(hour) : Math.abs(hour)}:${min < 10 ? '0'+min : min}`
     }
 
