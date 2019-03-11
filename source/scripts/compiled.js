@@ -211,7 +211,14 @@ function () {
         if (!!window.matchMedia) {
           return 'iOS 5';
         }
+      } else if (os == "Macintosh") {
+        if (/OS X 10_5/i.test(userAgent)) return "OS X 10_5";
+        if (/OS X 10_6/i.test(userAgent)) return "OS X 10_6";
+        if (/OS X 10_7/i.test(userAgent)) return "OS X 10_7";
+        if (/OS X 10_8/i.test(userAgent)) return "OS X 10_8";
       }
+
+      return "";
     }
   }, {
     key: "getPluginNames",
@@ -250,6 +257,6 @@ info.buildDataObject().then(function (obj) {
   for (var o in obj) {
     if (o == "Device-Info") continue;
     document.querySelector('.keys').insertAdjacentHTML('beforeend', "<li> ".concat(o, " </li>"));
-    document.querySelector('.values').insertAdjacentHTML('beforeend', "<li> ".concat(o == "Screen" || o == "Window" ? obj[o]['width'] + " : " + obj[o]['height'] : o == "OS-Info" ? obj[o]['os'] & obj[o]['version'] : obj[o].toString(), " </li>"));
+    document.querySelector('.values').insertAdjacentHTML('beforeend', "<li> ".concat(o == "Screen" || o == "Window" ? obj[o]['width'] + " : " + obj[o]['height'] : o == "OS-Info" ? obj[o]['os'] + " : " + obj[o]['version'] : obj[o].toString(), " </li>"));
   }
 });
