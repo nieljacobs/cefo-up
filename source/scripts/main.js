@@ -133,7 +133,7 @@ class DeviceInfo {
         let offset = (new Date()).getTimezoneOffset()
         let hour = -Math.round(offset / 60)
         let min = Math.abs((offset % 60) * 60)
-        return `${hour > 0 ? "+" : "-"}${hour < 10 ? '0'+hour : hour}:${min < 10 ? '0'+min : min}`
+        return `${hour > 0 ? "+" : "-"}${hour < 10 ? '0'+Math.abs(hour) : Math.abs(hour)}:${min < 10 ? '0'+min : min}`
     }
 
     getDimentions() {
@@ -223,7 +223,7 @@ info.buildDataObject().then(obj => {
         if (o == "Device-Info") continue
         document.querySelector('.keys').insertAdjacentHTML('beforeend', `<li> ${o} </li>`)
         document.querySelector('.values').insertAdjacentHTML('beforeend', `<li> ${
-            (o == "Screen" || o == "Window") ? obj[o]['width'] +" : "+ obj[o]['height'] : (o == "OS-Info") ? obj[o]['os'] +" : "+ obj[o]['version'] : obj[o].toString()
+            (o == "Screen" || o == "Window") ? obj[o]['width'] +" : "+ obj[o]['height'] : (o == "OS-Info") ? obj[o]['os'] +" : "+ obj[o]['version'] : obj[o]
         } </li>`)
     }
 })

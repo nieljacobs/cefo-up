@@ -154,7 +154,7 @@ function () {
       var offset = new Date().getTimezoneOffset();
       var hour = -Math.round(offset / 60);
       var min = Math.abs(offset % 60 * 60);
-      return "".concat(hour > 0 ? "+" : "-").concat(hour < 10 ? '0' + hour : hour, ":").concat(min < 10 ? '0' + min : min);
+      return "".concat(hour > 0 ? "+" : "-").concat(hour < 10 ? '0' + Math.abs(hour) : Math.abs(hour), ":").concat(min < 10 ? '0' + min : min);
     }
   }, {
     key: "getDimentions",
@@ -259,6 +259,6 @@ info.buildDataObject().then(function (obj) {
   for (var o in obj) {
     if (o == "Device-Info") continue;
     document.querySelector('.keys').insertAdjacentHTML('beforeend', "<li> ".concat(o, " </li>"));
-    document.querySelector('.values').insertAdjacentHTML('beforeend', "<li> ".concat(o == "Screen" || o == "Window" ? obj[o]['width'] + " : " + obj[o]['height'] : o == "OS-Info" ? obj[o]['os'] + " : " + obj[o]['version'] : obj[o].toString(), " </li>"));
+    document.querySelector('.values').insertAdjacentHTML('beforeend', "<li> ".concat(o == "Screen" || o == "Window" ? obj[o]['width'] + " : " + obj[o]['height'] : o == "OS-Info" ? obj[o]['os'] + " : " + obj[o]['version'] : obj[o], " </li>"));
   }
 });
