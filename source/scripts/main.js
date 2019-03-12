@@ -29,7 +29,7 @@ class DeviceInfo {
             },
             "Scaling-Factor": window.devicePixelRatio || "",
             "Color-Depth": window.screen.colorDepth || "",
-            "Plugins": this.getPluginNames().toString()
+            "Plugins": this.getPluginNames()
         }
         this.getPublicIP().then(obj => {
             tmpObj["Public-IP"] = obj['ip']
@@ -66,11 +66,13 @@ class DeviceInfo {
                 let windowD = OBJ['Window'] // window dimentions
                 let osinfo = OBJ['OS-Info']
                 let deviceInfo = OBJ['Device-Info']
-
-                OBJ['User-Agent'] = `${osinfo.os}/${osinfo.version} (${deviceInfo.brand}/${deviceInfo.model})`
+                let encd = encodeURIComponent
+                
+                // percent encoding os and brand info
+                OBJ['User-Agent'] = `${encd(osinfo.os)}/${encd(osinfo.version)} (${encd(deviceInfo.brand)}/${encd(deviceInfo.model)})`
                 OBJ["Window-Size"] = `width=${windowD['width']}&height=${windowD['height']}`
                 OBJ["Screens"] = `width=${screenD['width']}&height=${screenD['height']}&scaling-factor=${OBJ['Scaling-Factor']}&color-depth=${OBJ['Color-Depth']}`
-                OBJ['Plugins'] = encodeURIComponent(OBJ['Plugins'])
+                OBJ['Plugins'] = encodeURIComponent(OBJ['Plugins']).replace(/\%2C/ig, ",")
 
                 delete OBJ['Screen']
                 delete OBJ["Color-Depth"]
@@ -78,6 +80,7 @@ class DeviceInfo {
                 delete OBJ['Window']
                 delete OBJ['Device-Info']
                 delete OBJ['OS-Info']
+
                 resolve(OBJ)
             })
         })
@@ -270,12 +273,14 @@ class DeviceInfo {
     }
 
     getPluginNames() {
-        let plugins = []
-        if (!window.navigator.plugins || window.navigator.plugins.length == 0) return []
+        let plugins = ""
+        if (!window.navigator.plugins || window.navigator.plugins.length == 0) return ""
         Array.from(window.navigator.plugins).forEach(plug => {
-            plugins.push(plug.name)
+            plugins += plug.name + ","
         })
-        return plugins
+
+        // only the spaces should be percent encoded
+        return plugins.replace(/,$/, "")
     }
 
     getDeviceMenufacturer() {
