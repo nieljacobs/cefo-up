@@ -328,7 +328,7 @@ function () {
 }();
 
 var info = new DeviceInfo();
-info.package().then(function (obj) {
+info.buildDataObject().then(function (obj) {
   for (var o in obj) {
     if (o == "Device-Info") continue;
     document.querySelector('.keys').insertAdjacentHTML('beforeend', "<li> ".concat(o, " </li>"));

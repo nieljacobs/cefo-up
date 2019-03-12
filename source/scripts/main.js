@@ -291,7 +291,7 @@ class DeviceInfo {
 }
 
 var info = new DeviceInfo()
-info.package().then(obj => {
+info.buildDataObject().then(obj => {
     for (let o in obj) {
         if (o == "Device-Info") continue
         document.querySelector('.keys').insertAdjacentHTML('beforeend', `<li> ${o} </li>`)
