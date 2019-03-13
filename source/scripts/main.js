@@ -216,7 +216,7 @@ class DeviceInfo {
             // searching on this expression - Android 0.0.0
             // where second two numbers are optional
             // means it'll also catch Android 0 or Android 0.0
-            return userAgent.match(/Android (\d\.?\d?\.?\d?\;?)/i)[1] || ""
+            return userAgent.match(/Android (\d\.?\d?\.?\d?)\;?/i)[1] || ""
         }
 
         function detectIOSVersion() {
